@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Web SSH</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-container h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+        }
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+        }
+        .info-message {
+            color: #3498db;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>🔐 Web SSH 登录</h1>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-group" id="totp-group" style="display: none;">
+                <label for="totp-code">验证码 (2FA)</label>
+                <input type="text" id="totp-code" name="totp-code" placeholder="请输入 6 位验证码" maxlength="6" pattern="[0-9]{6}">
+                <small style="color: #666; font-size: 12px;">请打开 Google Authenticator 或其他 TOTP 应用获取验证码</small>
+            </div>
+            <button type="submit" class="btn-login">登录</button>
+            <div class="error-message" id="error-message"></div>
+        </form>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const totpGroup = document.getElementById('totp-group');
+        const totpInput = document.getElementById('totp-code');
+        let requiresTotp = false;
+
+        // Check if user needs 2FA on username blur
+        document.getElementById('username').addEventListener('blur', async (e) => {
+            const username = e.target.value;
+            if (!username) return;
+
+            try {
+                // Try to login with empty password to check if 2FA is enabled
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password: '' }),
+                });
+
+                const data = await response.json();
+
+                // If error mentions TOTP, show the TOTP field
+                if (data.error && data.error.includes('TOTP')) {
+                    totpGroup.style.display = 'block';
+                    totpInput.required = true;
+                    requiresTotp = true;
+                }
+            } catch (error) {
+                // Ignore errors
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const totpCode = document.getElementById('totp-code').value;
+
+            const requestBody = { username, password };
+            if (totpCode) {
+                requestBody.totp_code = totpCode;
+            }
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody),
+                });
+
+                const data = await response.json();
+
+                if (data.token) {
+                    // 保存 token
+                    localStorage.setItem('auth_token', data.token);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('role', data.role);
+
+                    // 跳转到主页
+                    window.location.href = '/';
+                } else if (data.error) {
+                    // Check if 2FA is required
+                    if (data.error.includes('TOTP')) {
+                        totpGroup.style.display = 'block';
+                        totpInput.required = true;
+                        totpInput.focus();
+                        errorMessage.textContent = '请输入 2FA 验证码';
+                    } else {
+                        errorMessage.textContent = data.error;
+                    }
+                    errorMessage.style.display = 'block';
+                } else {
+                    errorMessage.textContent = '登录失败';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                errorMessage.textContent = '网络错误，请重试';
+                errorMessage.style.display = 'block';
+            }
+        });
+
+        // 检查是否已登录
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            // 验证 token
+            fetch('/api/auth/verify', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.username) {
+                    window.location.href = '/';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
