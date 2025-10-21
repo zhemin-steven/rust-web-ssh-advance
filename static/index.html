@@ -7,115 +7,120 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
     <link rel="stylesheet" href="/style.css">
 </head>
-<body>
+<body data-i18n-title="app.title">
     <div id="app">
-        <!-- 连接表单 -->
+        <!-- Connection Form -->
         <div id="connect-form" class="connect-container">
             <div class="form-card">
                 <div class="header-bar">
-                    <h1>Web SSH 客户端</h1>
-                    <div class="user-info">
+                    <h1 class="user-actions-row" data-i18n="app.title">Web SSH 客户端</h1>
+                    <div class="user-actions-row">
                         <span id="user-display"></span>
-                        <button id="totp-btn" class="btn-totp">🔐 2FA</button>
-                        <button id="change-password-btn" class="btn-change-password">🔑 修改密码</button>
-                        <button id="audit-btn" class="btn-audit">📊 审计日志</button>
-                        <button id="logout-btn" class="btn-logout">退出</button>
+                        <button id="language-btn" class="btn-language" title="Switch Language">🌐</button>
+                    </div>
+                    <div class="user-actions-row">
+                        <button id="totp-btn" class="btn-totp" data-i18n="header.2fa">🔐 2FA</button>
+                        <button id="change-password-btn" class="btn-change-password" data-i18n="header.change.password">🔑 修改密码</button>
+                    </div>
+                    <div class="user-actions-row">
+                        <button id="audit-btn" class="btn-audit" data-i18n="header.audit.log">📊 审计日志</button>
+                        <button id="logout-btn" class="btn-logout" data-i18n="header.logout">退出</button>
                     </div>
                 </div>
 
-                <!-- 已保存的配置列表 -->
+                <!-- Saved Configurations -->
                 <div class="saved-configs" id="saved-configs">
                     <div class="saved-configs-header">
-                        <h3>📋 已保存的连接</h3>
-                        <button id="new-connection-btn" class="btn-new-connection">➕ 新建连接</button>
+                        <h3>📋 <span data-i18n="ssh.saved.connections">已保存的连接</span></h3>
+                        <button id="new-connection-btn" class="btn-new-connection">➕ <span data-i18n="ssh.new.connection">新建连接</span></button>
                     </div>
                     <div id="config-list" class="config-list">
-                        <p class="no-configs">暂无保存的连接</p>
+                        <p class="no-configs" data-i18n="ssh.no.connections">暂无保存的连接</p>
                     </div>
                 </div>
 
                 <form id="ssh-form" style="display: none;">
                     <div class="form-group">
-                        <label for="host">主机地址</label>
+                        <label for="host" data-i18n="ssh.host">主机地址</label>
                         <div class="input-group">
-                            <input type="text" id="host" placeholder="127.0.0.1" value="127.0.0.1" required>
+                            <input type="text" id="host" data-i18n-placeholder="ssh.host.placeholder" value="127.0.0.1" required>
                             <span class="separator">:</span>
                             <input type="number" id="port" placeholder="22" value="22" required>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="username">用户名</label>
-                        <input type="text" id="username" placeholder="root" required>
+                        <label for="username" data-i18n="ssh.username">用户名</label>
+                        <input type="text" id="username" data-i18n-placeholder="ssh.username.placeholder" required>
                     </div>
 
                     <div class="form-group">
-                        <label>认证方式</label>
+                        <label data-i18n="ssh.auth.type">认证方式</label>
                         <div class="auth-type">
                             <label class="radio-label">
                                 <input type="radio" name="auth" value="password" checked>
-                                <span>密码</span>
+                                <span data-i18n="ssh.auth.password">密码</span>
                             </label>
                             <label class="radio-label">
                                 <input type="radio" name="auth" value="key">
-                                <span>私钥</span>
+                                <span data-i18n="ssh.auth.key">私钥</span>
                             </label>
                         </div>
                     </div>
 
                     <div class="form-group" id="password-group">
-                        <label for="password">密码</label>
-                        <input type="password" id="password" placeholder="请输入密码" autocomplete="off">
+                        <label for="password" data-i18n="ssh.password">密码</label>
+                        <input type="password" id="password" data-i18n-placeholder="ssh.password.placeholder" autocomplete="off">
                     </div>
 
                     <div class="form-group" id="key-group" style="display: none;">
-                        <label for="private-key">私钥</label>
-                        <textarea id="private-key" rows="6" placeholder="请粘贴 SSH 私钥内容"></textarea>
-                        <small>或者</small>
+                        <label for="private-key" data-i18n="ssh.private.key">私钥</label>
+                        <textarea id="private-key" rows="6" placeholder="Paste SSH private key content"></textarea>
+                        <small data-i18n="common.or">或者</small>
                         <input type="file" id="key-file" accept=".pem,.key">
                     </div>
 
                     <div class="form-group" id="passphrase-group" style="display: none;">
-                        <label for="passphrase">密钥密码（可选）</label>
-                        <input type="password" id="passphrase" placeholder="如果私钥有密码保护" autocomplete="off">
+                        <label for="passphrase">Passphrase (Optional)</label>
+                        <input type="password" id="passphrase" placeholder="If private key is encrypted" autocomplete="off">
                     </div>
 
                     <div class="form-group save-config-group">
                         <label class="checkbox-label">
                             <input type="checkbox" id="save-config">
-                            <span>💾 保存此连接配置</span>
+                            <span>💾 <span data-i18n="ssh.save.config">保存此连接配置</span></span>
                         </label>
-                        <input type="text" id="config-name" placeholder="连接名称（例如：生产服务器）" style="display: none;">
+                        <input type="text" id="config-name" data-i18n-placeholder="ssh.config.name.placeholder" style="display: none;">
                     </div>
 
                     <div class="form-actions">
-                        <button type="button" id="cancel-form-btn" class="cancel-btn">取消</button>
-                        <button type="submit" class="connect-btn">连接</button>
+                        <button type="button" id="cancel-form-btn" class="cancel-btn" data-i18n="ssh.cancel">取消</button>
+                        <button type="submit" class="connect-btn" data-i18n="ssh.connect">连接</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- 终端容器 -->
+        <!-- Terminal Container -->
         <div id="terminal-container" style="display: none;">
             <div id="terminal-header">
                 <span id="connection-info"></span>
-                <button id="disconnect-btn" class="disconnect-btn">断开连接</button>
+                <button id="disconnect-btn" class="disconnect-btn" data-i18n="ssh.disconnect">断开连接</button>
             </div>
             <div id="terminal"></div>
         </div>
 
-        <!-- 审计日志模态框 -->
+        <!-- Audit Log Modal -->
         <div id="audit-modal" class="modal" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>📊 审计日志</h2>
+                    <h2>📊 <span data-i18n="audit.title">审计日志</span></h2>
                     <button class="modal-close" id="close-audit-modal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div class="audit-filters">
                         <label>
-                            显示数量:
+                            <span data-i18n="audit.limit">显示数量</span>:
                             <select id="audit-limit">
                                 <option value="50">50</option>
                                 <option value="100" selected>100</option>
@@ -123,97 +128,97 @@
                                 <option value="500">500</option>
                             </select>
                         </label>
-                        <button id="refresh-audit" class="btn-refresh">🔄 刷新</button>
+                        <button id="refresh-audit" class="btn-refresh">🔄 <span data-i18n="common.refresh">刷新</span></button>
                     </div>
                     <div id="audit-logs" class="audit-logs">
-                        <p class="loading">加载中...</p>
+                        <p class="loading" data-i18n="common.loading">加载中...</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 修改密码模态框 -->
+        <!-- Change Password Modal -->
         <div id="change-password-modal" class="modal" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>🔑 修改密码</h2>
+                    <h2>🔑 <span data-i18n="password.change.title">修改密码</span></h2>
                     <button class="modal-close" id="close-change-password">&times;</button>
                 </div>
                 <form id="change-password-form">
                     <div class="form-group">
-                        <label for="current-password">当前密码</label>
-                        <input type="password" id="current-password" placeholder="请输入当前密码" required>
+                        <label for="current-password" data-i18n="password.old">当前密码</label>
+                        <input type="password" id="current-password" data-i18n-placeholder="password.old.placeholder" required>
                     </div>
                     <div class="form-group">
-                        <label for="new-password">新密码</label>
-                        <input type="password" id="new-password" placeholder="请输入新密码" required minlength="6">
+                        <label for="new-password" data-i18n="password.new">新密码</label>
+                        <input type="password" id="new-password" data-i18n-placeholder="password.new.placeholder" required minlength="6">
                     </div>
                     <div class="form-group">
-                        <label for="confirm-password">确认新密码</label>
-                        <input type="password" id="confirm-password" placeholder="请再次输入新密码" required minlength="6">
+                        <label for="confirm-password" data-i18n="password.confirm">确认新密码</label>
+                        <input type="password" id="confirm-password" data-i18n-placeholder="password.confirm.placeholder" required minlength="6">
                     </div>
                     <div class="form-actions">
-                        <button type="button" class="cancel-btn" id="cancel-change-password">取消</button>
-                        <button type="submit" class="connect-btn">确认修改</button>
+                        <button type="button" class="cancel-btn" id="cancel-change-password" data-i18n="common.cancel">取消</button>
+                        <button type="submit" class="connect-btn" data-i18n="password.change.button">确认修改</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- 2FA 设置模态框 -->
+        <!-- 2FA Setup Modal -->
         <div id="totp-modal" class="modal" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>🔐 双因素认证 (2FA)</h2>
+                    <h2>🔐 <span data-i18n="totp.title">双因素认证 (2FA)</span></h2>
                     <button class="modal-close" id="close-totp">&times;</button>
                 </div>
                 <div id="totp-content" style="padding: 30px;">
                     <div id="totp-status-view">
                         <p id="totp-status-text" style="text-align: center; margin-bottom: 20px;"></p>
                         <div class="form-actions">
-                            <button type="button" id="enable-totp-btn" class="connect-btn" style="display: none;">启用 2FA</button>
-                            <button type="button" id="disable-totp-btn" class="cancel-btn" style="display: none;">禁用 2FA</button>
+                            <button type="button" id="enable-totp-btn" class="connect-btn" style="display: none;" data-i18n="totp.enable">启用 2FA</button>
+                            <button type="button" id="disable-totp-btn" class="cancel-btn" style="display: none;" data-i18n="totp.disable">禁用 2FA</button>
                         </div>
                     </div>
 
-                    <!-- 启用 2FA 界面 -->
+                    <!-- Enable 2FA View -->
                     <div id="totp-setup-view" style="display: none;">
                         <div style="text-align: center; margin-bottom: 20px;">
-                            <h3 style="margin-bottom: 15px;">扫描二维码</h3>
+                            <h3 style="margin-bottom: 15px;" data-i18n="totp.scan.qr">扫描二维码</h3>
                             <img id="qr-code-image" src="" alt="QR Code" style="max-width: 200px; border: 2px solid #ddd; padding: 10px; border-radius: 8px;">
                         </div>
                         <div style="margin-bottom: 20px;">
-                            <h4 style="margin-bottom: 10px;">或手动输入密钥：</h4>
+                            <h4 style="margin-bottom: 10px;" data-i18n="totp.manual.entry">或手动输入密钥：</h4>
                             <div style="background: #f5f5f5; padding: 15px; border-radius: 6px; word-break: break-all; font-family: monospace; font-size: 14px;" id="totp-secret-text"></div>
                         </div>
                         <form id="enable-totp-form">
                             <div class="form-group">
-                                <label for="totp-verify-code">验证码</label>
-                                <input type="text" id="totp-verify-code" placeholder="请输入 6 位验证码" required maxlength="6" pattern="[0-9]{6}">
-                                <small style="color: #666; font-size: 12px;">请在 Google Authenticator 或其他 TOTP 应用中添加此账号，然后输入生成的 6 位验证码</small>
+                                <label for="totp-verify-code" data-i18n="totp.verify.code">验证码</label>
+                                <input type="text" id="totp-verify-code" data-i18n-placeholder="totp.verify.code.placeholder" required maxlength="6" pattern="[0-9]{6}">
+                                <small style="color: #666; font-size: 12px;" data-i18n="totp.scan.instruction">请在 Google Authenticator 或其他认证器应用中添加此账号</small>
                             </div>
                             <input type="hidden" id="totp-secret-hidden">
                             <div class="form-actions">
-                                <button type="button" class="cancel-btn" id="cancel-totp-setup">取消</button>
-                                <button type="submit" class="connect-btn">确认启用</button>
+                                <button type="button" class="cancel-btn" id="cancel-totp-setup" data-i18n="common.cancel">取消</button>
+                                <button type="submit" class="connect-btn" data-i18n="totp.verify.button">确认启用</button>
                             </div>
                         </form>
                     </div>
 
-                    <!-- 禁用 2FA 界面 -->
+                    <!-- Disable 2FA View -->
                     <div id="totp-disable-view" style="display: none;">
                         <form id="disable-totp-form">
                             <div class="form-group">
-                                <label for="totp-disable-password">当前密码</label>
-                                <input type="password" id="totp-disable-password" placeholder="请输入当前密码" required>
+                                <label for="totp-disable-password" data-i18n="totp.disable.password">当前密码</label>
+                                <input type="password" id="totp-disable-password" data-i18n-placeholder="totp.password.placeholder" required>
                             </div>
                             <div class="form-group">
-                                <label for="totp-disable-code">验证码</label>
-                                <input type="text" id="totp-disable-code" placeholder="请输入 6 位验证码" required maxlength="6" pattern="[0-9]{6}">
+                                <label for="totp-disable-code" data-i18n="totp.disable.code">验证码</label>
+                                <input type="text" id="totp-disable-code" data-i18n-placeholder="totp.code.placeholder" required maxlength="6" pattern="[0-9]{6}">
                             </div>
                             <div class="form-actions">
-                                <button type="button" class="cancel-btn" id="cancel-totp-disable">取消</button>
-                                <button type="submit" class="connect-btn">确认禁用</button>
+                                <button type="button" class="cancel-btn" id="cancel-totp-disable" data-i18n="common.cancel">取消</button>
+                                <button type="submit" class="connect-btn" data-i18n="totp.disable.button">确认禁用</button>
                             </div>
                         </form>
                     </div>
@@ -224,6 +229,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="/i18n.js"></script>
     <script src="/app.js"></script>
 </body>
 </html>

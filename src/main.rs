@@ -15,11 +15,51 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use warp::Filter;
 use log::info;
+use std::fs;
+use std::io::{self, Write};
 use auth::AuthService;
 use ssh_config::SshConfigService;
 use audit::AuditService;
 use host_key::HostKeyService;
 use crypto::CryptoService;
+
+/// Get master password from multiple sources (priority order):
+/// 1. Environment variable: WEBSSH_MASTER_PASSWORD
+/// 2. File: ./master_password.txt
+/// 3. Interactive input (stdin)
+fn get_master_password() -> String {
+    // 1. Try environment variable
+    if let Ok(password) = std::env::var("WEBSSH_MASTER_PASSWORD") {
+        if !password.is_empty() {
+            info!("Master password loaded from environment variable");
+            return password;
+        }
+    }
+
+    // 2. Try password file
+    if let Ok(password) = fs::read_to_string("master_password.txt") {
+        let password = password.trim().to_string();
+        if !password.is_empty() {
+            info!("Master password loaded from master_password.txt");
+            return password;
+        }
+    }
+
+    // 3. Interactive input
+    println!("\n===========================================");
+    println!("  WebSSH Server - Master Password");
+    println!("===========================================\n");
+    println!("Enter master password to decrypt SSH configurations:");
+    println!("(First time: set a strong password. Subsequent: use the same password)");
+    println!("\nTip: For non-interactive mode, use:");
+    println!("  - Environment variable: export WEBSSH_MASTER_PASSWORD='your_password'");
+    println!("  - Password file: echo 'your_password' > master_password.txt\n");
+
+    io::stdout().flush().unwrap();
+
+    rpassword::read_password()
+        .expect("Failed to read password")
+}
 
 #[tokio::main]
 async fn main() {
@@ -28,22 +68,15 @@ async fn main() {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    // Prompt for master password
-    println!("\n===========================================");
-    println!("  WebSSH Server - Master Password");
-    println!("===========================================\n");
-    println!("Enter master password to decrypt SSH configurations:");
-    println!("(First time: set a strong password. Subsequent: use the same password)\n");
-
-    let master_password = rpassword::read_password()
-        .expect("Failed to read password");
+    // Get master password from multiple sources
+    let master_password = get_master_password();
 
     if master_password.is_empty() {
         eprintln!("Error: Master password cannot be empty");
         std::process::exit(1);
     }
 
-    println!("\nInitializing encryption service...");
+    info!("Initializing encryption service...");
 
     // Initialize services
     let auth_service = AuthService::new();

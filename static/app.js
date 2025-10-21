@@ -33,6 +33,20 @@ fetch('/api/auth/verify', {
     window.location.href = '/login.html';
 });
 
+// Language switcher
+document.getElementById('language-btn').addEventListener('click', () => {
+    const newLang = i18n.getLanguage() === 'zh-CN' ? 'en-US' : 'zh-CN';
+    i18n.setLanguage(newLang);
+    // Reload saved configs to update language
+    loadSavedConfigs();
+});
+
+// Listen for language change events to update dynamic content
+window.addEventListener('languageChanged', () => {
+    // Reload saved configs to update language
+    loadSavedConfigs();
+});
+
 // Logout handler
 document.getElementById('logout-btn').addEventListener('click', () => {
     localStorage.clear();
@@ -70,17 +84,17 @@ document.getElementById('change-password-form').addEventListener('submit', async
 
     // Validate passwords
     if (newPassword !== confirmPassword) {
-        alert('新密码和确认密码不匹配！');
+        alert(i18n.t('password.mismatch'));
         return;
     }
 
     if (newPassword.length < 6) {
-        alert('新密码长度至少为 6 个字符！');
+        alert(i18n.t('password.too.short'));
         return;
     }
 
     if (newPassword === currentPassword) {
-        alert('新密码不能与当前密码相同！');
+        alert(i18n.t('password.same.as.old'));
         return;
     }
 
@@ -102,15 +116,15 @@ document.getElementById('change-password-form').addEventListener('submit', async
         const data = await response.json();
 
         if (data.success) {
-            alert('✅ 密码修改成功！请重新登录。');
+            alert('✅ ' + i18n.t('password.change.success'));
             localStorage.clear();
             window.location.href = '/login.html';
         } else {
-            alert('❌ 密码修改失败: ' + (data.error || '未知错误'));
+            alert('❌ ' + i18n.t('password.change.error') + ': ' + (data.error || i18n.t('error.unknown')));
         }
     } catch (error) {
         console.error('Failed to change password:', error);
-        alert('❌ 密码修改失败，请稍后重试');
+        alert('❌ ' + i18n.t('password.change.error'));
     }
 });
 
@@ -143,7 +157,7 @@ async function showTotpModal() {
         const data = await response.json();
 
         if (data.error) {
-            alert('获取 2FA 状态失败: ' + data.error);
+            alert(i18n.t('totp.status.error') + ': ' + data.error);
             return;
         }
 
@@ -161,17 +175,23 @@ async function showTotpModal() {
         const disableBtn = document.getElementById('disable-totp-btn');
 
         if (data.enabled) {
-            statusText.innerHTML = '✅ <strong>2FA 已启用</strong><br><small style="color: #666;">您的账号已受到双因素认证保护</small>';
+            const msg = i18n.getLanguage() === 'zh-CN'
+                ? '您的账号已受到双因素认证保护'
+                : 'Your account is protected by two-factor authentication';
+            statusText.innerHTML = `✅ <strong>${i18n.t('totp.enabled')}</strong><br><small style="color: #666;">${msg}</small>`;
             enableBtn.style.display = 'none';
             disableBtn.style.display = 'block';
         } else {
-            statusText.innerHTML = '⚠️ <strong>2FA 未启用</strong><br><small style="color: #666;">建议启用双因素认证以提高账号安全性</small>';
+            const msg = i18n.getLanguage() === 'zh-CN'
+                ? '建议启用双因素认证以提高账号安全性'
+                : 'Enable 2FA to improve account security';
+            statusText.innerHTML = `⚠️ <strong>${i18n.t('totp.disabled')}</strong><br><small style="color: #666;">${msg}</small>`;
             enableBtn.style.display = 'block';
             disableBtn.style.display = 'none';
         }
     } catch (error) {
         console.error('Failed to get TOTP status:', error);
-        alert('获取 2FA 状态失败');
+        alert(i18n.t('totp.status.error'));
     }
 }
 
@@ -190,7 +210,7 @@ document.getElementById('enable-totp-btn').addEventListener('click', async () =>
         const data = await response.json();
 
         if (data.error) {
-            alert('设置 2FA 失败: ' + data.error);
+            alert(i18n.t('totp.setup.error') + ': ' + data.error);
             return;
         }
 
@@ -206,7 +226,7 @@ document.getElementById('enable-totp-btn').addEventListener('click', async () =>
         document.getElementById('totp-verify-code').value = '';
     } catch (error) {
         console.error('Failed to setup TOTP:', error);
-        alert('设置 2FA 失败');
+        alert(i18n.t('totp.setup.error'));
     }
 });
 
@@ -236,14 +256,14 @@ document.getElementById('enable-totp-form').addEventListener('submit', async (e)
         const data = await response.json();
 
         if (data.success) {
-            alert('✅ 2FA 启用成功！下次登录时需要输入验证码。');
+            alert('✅ ' + i18n.t('totp.enable.success'));
             document.getElementById('totp-modal').style.display = 'none';
         } else {
-            alert('❌ 启用失败: ' + (data.error || '验证码错误'));
+            alert('❌ ' + i18n.t('totp.enable.error') + ': ' + (data.error || i18n.t('error.unknown')));
         }
     } catch (error) {
         console.error('Failed to enable TOTP:', error);
-        alert('❌ 启用失败，请稍后重试');
+        alert('❌ ' + i18n.t('totp.enable.error'));
     }
 });
 
@@ -280,14 +300,14 @@ document.getElementById('disable-totp-form').addEventListener('submit', async (e
         const data = await response.json();
 
         if (data.success) {
-            alert('✅ 2FA 已禁用');
+            alert('✅ ' + i18n.t('totp.disable.success'));
             document.getElementById('totp-modal').style.display = 'none';
         } else {
-            alert('❌ 禁用失败: ' + (data.error || '密码或验证码错误'));
+            alert('❌ ' + i18n.t('totp.disable.error') + ': ' + (data.error || i18n.t('error.unknown')));
         }
     } catch (error) {
         console.error('Failed to disable TOTP:', error);
-        alert('❌ 禁用失败，请稍后重试');
+        alert('❌ ' + i18n.t('totp.disable.error'));
     }
 });
 
@@ -354,7 +374,7 @@ async function loadAuditLogs() {
     const limit = auditLimitSelect.value;
     const auditLogsContainer = document.getElementById('audit-logs');
 
-    auditLogsContainer.innerHTML = '<p class="loading">加载中...</p>';
+    auditLogsContainer.innerHTML = `<p class="loading">${i18n.t('app.loading')}</p>`;
 
     try {
         const response = await fetch(`/api/audit/logs?limit=${limit}`, {
@@ -365,12 +385,12 @@ async function loadAuditLogs() {
         const data = await response.json();
 
         if (data.error) {
-            auditLogsContainer.innerHTML = `<p class="no-logs">错误: ${data.error}</p>`;
+            auditLogsContainer.innerHTML = `<p class="no-logs">${i18n.t('error.server')}: ${data.error}</p>`;
             return;
         }
 
         if (!Array.isArray(data) || data.length === 0) {
-            auditLogsContainer.innerHTML = '<p class="no-logs">暂无审计日志</p>';
+            auditLogsContainer.innerHTML = `<p class="no-logs">${i18n.t('audit.no.logs')}</p>`;
             return;
         }
 
@@ -387,7 +407,7 @@ async function loadAuditLogs() {
                     </div>
                     <div class="audit-log-details">
                         <span class="audit-log-user">👤 ${escapeHtml(log.username)}</span>
-                        ${log.target ? ` • 目标: ${escapeHtml(log.target)}` : ''}
+                        ${log.target ? ` • -> : ${escapeHtml(log.target)}` : ''}
                         ${log.details ? ` • ${escapeHtml(log.details)}` : ''}
                         ${log.ip_address ? ` • IP: ${escapeHtml(log.ip_address)}` : ''}
                     </div>
@@ -400,26 +420,45 @@ async function loadAuditLogs() {
     }
 }
 
-// Get action text in Chinese
+// Get action text with i18n support
 function getActionText(action) {
-    const actionMap = {
-        'Login': '🔐 登录',
-        'Logout': '🚪 登出',
-        'SshConnect': '🔌 SSH 连接',
-        'SshDisconnect': '🔌 SSH 断开',
-        'SshCommand': '⌨️ SSH 命令',
-        'CreateConfig': '➕ 创建配置',
-        'UpdateConfig': '✏️ 更新配置',
-        'DeleteConfig': '🗑️ 删除配置',
-        'CreateUser': '👤 创建用户',
-        'DeleteUser': '👤 删除用户',
+    const actionKey = `action.${action}`;
+    const translated = i18n.t(actionKey);
+
+    // If translation exists, add emoji prefix
+    const emojiMap = {
+        'Login': '🔐',
+        'Logout': '🚪',
+        'SshConnect': '🔌',
+        'SshDisconnect': '🔌',
+        'SshCommand': '⌨️',
+        'CreateConfig': '➕',
+        'UpdateConfig': '✏️',
+        'DeleteConfig': '🗑️',
+        'CreateUser': '👤',
+        'DeleteUser': '👤',
     };
-    return actionMap[action] || action;
+
+    const emoji = emojiMap[action] || '';
+    return emoji ? `${emoji} ${translated}` : translated;
 }
 
-// Base64 encoding/decoding utilities
-const utf8ToBase64 = (str) => btoa(unescape(encodeURIComponent(str)));
-const base64ToUtf8 = (str) => decodeURIComponent(escape(atob(str)));
+// Base64 encoding/decoding utilities (UTF-8 safe)
+const utf8ToBase64 = (str) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    return btoa(String.fromCharCode(...data));
+};
+
+const base64ToUtf8 = (str) => {
+    const data = atob(str);
+    const bytes = new Uint8Array(data.length);
+    for (let i = 0; i < data.length; i++) {
+        bytes[i] = data.charCodeAt(i);
+    }
+    const decoder = new TextDecoder();
+    return decoder.decode(bytes);
+};
 
 // Global variables
 let terminal = null;
@@ -428,22 +467,22 @@ let fitAddon = null;
 let lastSelectionTime = 0;
 let savedSelection = '';
 
-// Copy text to clipboard using fallback method
-function copyTextFallback(text) {
+// Copy text to clipboard (with fallback for older browsers)
+async function copyText(text) {
     try {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.top = '0';
-        textArea.style.left = '0';
-        textArea.style.opacity = '0';
-        
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            // Fallback
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
     } catch (err) {
         console.error('Copy failed:', err);
     }
@@ -463,9 +502,13 @@ async function loadSavedConfigs() {
         const configList = document.getElementById('config-list');
 
         if (configs.error || configs.length === 0) {
-            configList.innerHTML = '<p class="no-configs">暂无保存的连接</p>';
+            configList.innerHTML = `<p class="no-configs">${i18n.t('ssh.no.saved.connections')}</p>`;
             return;
         }
+
+        const lastUsedText = i18n.getLanguage() === 'zh-CN' ? '最后使用' : 'Last used';
+        const connectText = i18n.t('ssh.connect');
+        const deleteText = i18n.t('common.delete');
 
         configList.innerHTML = configs.map(config => `
             <div class="config-item">
@@ -473,17 +516,18 @@ async function loadSavedConfigs() {
                     <div class="config-name">${escapeHtml(config.name)}</div>
                     <div class="config-details">
                         ${escapeHtml(config.username)}@${escapeHtml(config.host)}:${config.port}
-                        ${config.last_used ? ` • 最后使用: ${new Date(config.last_used * 1000).toLocaleString()}` : ''}
+                        ${config.last_used ? ` • ${lastUsedText}: ${new Date(config.last_used * 1000).toLocaleString()}` : ''}
                     </div>
                 </div>
                 <div class="config-actions">
-                    <button class="btn-use" onclick="useConfig('${config.id}')">连接</button>
-                    <button class="btn-delete" onclick="deleteConfig('${config.id}')">删除</button>
+                    <button class="btn-use" onclick="useConfig('${config.id}')">${connectText}</button>
+                    <button class="btn-delete" onclick="deleteConfig('${config.id}')">${deleteText}</button>
                 </div>
             </div>
         `).join('');
     } catch (error) {
         console.error('Failed to load configs:', error);
+        configList.innerHTML = `<p class="no-configs">${i18n.t('config.load.error')}</p>`;
     }
 }
 
@@ -499,7 +543,7 @@ async function useConfig(configId) {
         const config = await response.json();
 
         if (config.error) {
-            alert('加载配置失败: ' + config.error);
+            alert(i18n.t('config.load.error') + ': ' + config.error);
             return;
         }
 
@@ -515,13 +559,13 @@ async function useConfig(configId) {
         });
     } catch (error) {
         console.error('Failed to use config:', error);
-        alert('加载配置失败');
+        alert(i18n.t('config.load.error'));
     }
 }
 
 // Delete a saved configuration
 async function deleteConfig(configId) {
-    if (!confirm('确定要删除这个配置吗？')) {
+    if (!confirm(i18n.t('config.delete.confirm'))) {
         return;
     }
 
@@ -538,11 +582,11 @@ async function deleteConfig(configId) {
         if (result.success) {
             loadSavedConfigs();
         } else {
-            alert('删除失败: ' + (result.error || '未知错误'));
+            alert(i18n.t('config.delete.error') + ': ' + (result.error || i18n.t('error.unknown')));
         }
     } catch (error) {
         console.error('Failed to delete config:', error);
-        alert('删除失败');
+        alert(i18n.t('config.delete.error'));
     }
 }
 
@@ -564,12 +608,12 @@ async function saveCurrentConfig(configData) {
             loadSavedConfigs();
             return true;
         } else {
-            alert('保存失败: ' + (result.error || '未知错误'));
+            alert(i18n.t('config.save.error') + ': ' + (result.error || i18n.t('error.unknown')));
             return false;
         }
     } catch (error) {
         console.error('Failed to save config:', error);
-        alert('保存失败');
+        alert(i18n.t('config.save.error'));
         return false;
     }
 }
@@ -659,13 +703,13 @@ sshForm.addEventListener('submit', async (e) => {
     if (authType === 'password') {
         password = document.getElementById('password').value;
         if (!password) {
-            alert('请输入密码');
+            alert(i18n.t('form.password.required'));
             return;
         }
     } else {
         privateKey = privateKeyTextarea.value;
         if (!privateKey) {
-            alert('请输入或选择私钥文件');
+            alert(i18n.t('form.key.required'));
             return;
         }
         password = document.getElementById('passphrase').value;
@@ -675,7 +719,7 @@ sshForm.addEventListener('submit', async (e) => {
     if (saveConfigCheckbox.checked) {
         const configName = configNameInput.value.trim();
         if (!configName) {
-            alert('请输入连接名称');
+            alert(i18n.t('form.config.name.required'));
             return;
         }
 
@@ -722,7 +766,13 @@ disconnectBtn.addEventListener('click', () => {
 function showConnectForm() {
     connectForm.style.display = 'flex';
     terminalContainer.style.display = 'none';
-    
+
+    // 恢复 body 滚动
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+
     if (terminal) {
         terminal.dispose();
         terminal = null;
@@ -733,6 +783,12 @@ function showConnectForm() {
 function showTerminal() {
     connectForm.style.display = 'none';
     terminalContainer.style.display = 'flex';
+
+    // 在移动端禁用 body 滚动，防止页面滚动干扰终端
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
 }
 
 // Connect to SSH
@@ -778,9 +834,8 @@ function connectSSH(config) {
     connectionInfo.textContent = `${config.username}@${config.host}:${config.port}`;
 
     // Open terminal
-    terminal.open(document.getElementById('terminal'));
-
     const terminalElement = document.getElementById('terminal');
+    terminal.open(terminalElement);
 
     // Handle keyboard events
     terminalElement.addEventListener('keydown', (e) => {
@@ -788,12 +843,7 @@ function connectSSH(config) {
         if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
             const selection = savedSelection || terminal.getSelection();
             if (selection && selection.length > 0) {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(selection).catch(() => copyTextFallback(selection));
-                } else {
-                    copyTextFallback(selection);
-                }
-
+                copyText(selection);
                 lastSelectionTime = Date.now();
                 savedSelection = '';
                 e.preventDefault();
@@ -831,11 +881,11 @@ function connectSSH(config) {
     });
 
     // Handle right-click for copy
-    terminalElement.addEventListener('contextmenu', (e) => {
+    terminalElement.addEventListener('contextmenu', () => {
         setTimeout(() => {
             const selection = terminal.getSelection();
             if (selection && selection.length > 0) {
-                copyTextFallback(selection);
+                copyText(selection);
             }
         }, 10);
     });
@@ -856,7 +906,10 @@ function connectSSH(config) {
         terminal.writeln('WebSocket 连接已建立');
         terminal.writeln(`正在连接到 ${config.username}@${config.host}:${config.port}...`);
 
-        setTimeout(() => fitAddon.fit(), 200);
+        setTimeout(() => {
+            fitAddon.fit();
+            scrollTerminalToBottom();
+        }, 200);
 
         // Send connection parameters
         socket.send(JSON.stringify({ type: 'addr', data: utf8ToBase64(`${config.host}:${config.port}`) }));
@@ -895,24 +948,34 @@ function connectSSH(config) {
                     type: 'stdin',
                     data: utf8ToBase64(data)
                 }));
+
+                // 用户输入后也滚动到底部
+                scrollTerminalThrottled();
             }
         });
 
         // Handle window resize
         window.addEventListener('resize', handleResize);
-        setTimeout(handleResize, 300);
+        setTimeout(() => {
+            handleResize();
+            scrollTerminalToBottom();
+        }, 300);
     };
 
     socket.onmessage = (event) => {
         try {
             const msg = JSON.parse(event.data);
-            
+
             switch (msg.type) {
                 case 'stdout':
                     terminal.write(base64ToUtf8(msg.data));
+                    // 使用节流版本避免频繁滚动
+                    scrollTerminalThrottled();
                     break;
                 case 'stderr':
                     terminal.write('\x1b[31m' + base64ToUtf8(msg.data) + '\x1b[0m');
+                    // 使用节流版本避免频繁滚动
+                    scrollTerminalThrottled();
                     break;
             }
         } catch (e) {
@@ -944,6 +1007,35 @@ function debounce(func, wait) {
     };
 }
 
+// Scroll terminal to bottom - 确保光标可见（移动端优化）
+let scrollPending = false;
+function scrollTerminalToBottom() {
+    if (!terminal || scrollPending) return;
+    scrollPending = true;
+
+    requestAnimationFrame(() => {
+        try {
+            terminal.scrollToBottom();
+            const viewport = document.querySelector('.xterm-viewport');
+            if (viewport) {
+                viewport.scrollTop = viewport.scrollHeight + 100; // 额外偏移确保光标可见
+            }
+
+            // 延迟再次确保（处理异步渲染）
+            setTimeout(() => {
+                if (terminal) terminal.scrollToBottom();
+                if (viewport) viewport.scrollTop = viewport.scrollHeight + 100;
+                scrollPending = false;
+            }, 100);
+        } catch (e) {
+            scrollPending = false;
+        }
+    });
+}
+
+// 节流版本 - 避免频繁滚动影响性能
+const scrollTerminalThrottled = debounce(scrollTerminalToBottom, 100);
+
 // Handle window resize
 const handleResize = debounce(() => {
     if (terminal && fitAddon) {
@@ -957,6 +1049,9 @@ const handleResize = debounce(() => {
                     rows: terminal.rows
                 }));
             }
+
+            // 调整大小后滚动到底部
+            scrollTerminalToBottom();
         } catch (e) {
             console.error('调整终端大小失败:', e);
         }
